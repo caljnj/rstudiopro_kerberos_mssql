@@ -1,0 +1,17 @@
+[domain_controller]
+10.0.0.20
+
+[domain_controller:vars]
+ansible_user=vagrant
+ansible_password=vagrant
+ansible_connection=winrm
+ansible_winrm_server_cert_validation=ignore
+
+[win_server]
+10.0.0.102
+
+[win_server:vars]
+ansible_user=vagrant
+ansible_password=vagrant
+ansible_connection=winrm
+ansible_winrm_server_cert_validation=ignore

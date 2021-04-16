@@ -1,0 +1,7 @@
+---
+- name: cyberloop.local Domain Controller configuration
+  hosts: domain_controller
+  serial: 1
+  roles:
+  - common
+  - domain_controller

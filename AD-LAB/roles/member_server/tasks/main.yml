@@ -1,0 +1,74 @@
+- name: Change the hostname to member-server
+  win_hostname:
+    name: member-server
+  register: win_hostname
+
+- name: Reboot if needed
+  win_reboot:
+  when: win_hostname.reboot_required
+
+- name: Set configure dns
+  win_dns_client:
+    adapter_names: '*'
+    ipv4_addresses:
+    - 10.0.0.20
+    log_path: C:\dns_log.txt
+
+- name: Verify File Server Role is installed.
+  win_feature:
+    name: File-Services, FS-FileServer
+    state: present
+    include_management_tools: True
+
+- name: Install IIS Management Features
+  win_feature:
+    name: Web-Mgmt-Tools, 
+          Web-Mgmt-Console, 
+          Web-Scripting-Tools, 
+          Web-Mgmt-Service
+    state: present
+
+- name: Add SYSTEM allow rights to machine keys (required for installation of IIS 6 components)
+  win_acl:
+    path: C:\ProgramData\Microsoft\Crypto\RSA\MachineKeys\
+    user: SYSTEM
+    rights: FullControl
+    type: allow
+    state: present
+    inherit: ContainerInherit, ObjectInherit
+    propagation: 'InheritOnly'
+
+- name: Install IIS 6 Compatibility Features 
+  win_feature:
+    name: Web-Mgmt-Compat,
+          Web-Metabase,
+          Web-Lgcy-Mgmt-Console,
+          Web-Lgcy-Scripting,
+          Web-WMI
+    state: present
+
+- name: Ensure directory structure for public share exists
+  win_file:
+    path: C:\shares\public
+    state: directory
+
+- name: Ensure public share exists
+  win_share:
+    name: public
+    description: Basic RW share for all domain users
+    path: C:\shares\public
+    list: yes
+    full: Administrators
+    change: Users
+
+- name: Add member server to cyberloop.local
+  win_domain_membership:
+    dns_domain_name: cyberloop.local
+    domain_admin_user: Administrator@cyberloop.local
+    domain_admin_password: StrongPass123!
+    state: domain
+  register: domain_state
+
+- name: Reboot if needed
+  win_reboot:
+  when: domain_state.reboot_required

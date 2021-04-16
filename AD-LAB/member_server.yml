@@ -1,0 +1,11 @@
+---
+
+- name: cyberloop.local server configuration
+  hosts: win_server
+
+  roles:
+    - common
+    - member_server
+    - mssql
+
+...
