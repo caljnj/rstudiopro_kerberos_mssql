@@ -1,0 +1,9 @@
+# Default Redhat/Centos PAM profile from rstudio
+# on Redhat/Centos this profile is created by default as the default policy is to deny
+# https://docs.rstudio.com/ide/server-pro/authenticating-users.html#pam-basics
+# this has been edited to use pam_sss instead
+
+auth      requisite      pam_succeed_if.so uid >= 500 quiet
+auth      required       pam_sss.so nodelay debug
+account   required       pam_sss.so debug
+#session   required      pam_mkhomedir.so
