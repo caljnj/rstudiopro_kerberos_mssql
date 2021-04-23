@@ -1,0 +1,5 @@
+#!/usr/bin/execlineb
+# --- /etc/services.d/sssd ---
+# -P flag is not used, so this process inherits env vars. 
+# i think this is ok for now as this is a service to be run by root.
+/usr/sbin/sssd -D -f

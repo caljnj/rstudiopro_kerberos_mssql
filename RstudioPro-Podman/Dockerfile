@@ -157,7 +157,7 @@ COPY common-session /etc/pam.d/common-session
 
 
 #-------rsyslog-------
-RUN apt install --yes rsyslog
+#RUN apt install --yes rsyslog
 
 
 ##------------------------------------------------------------------------------#
@@ -166,6 +166,8 @@ RUN apt install --yes rsyslog
 
 COPY odbc.ini /etc/odbc.ini
 
+
+
 ##------------------------------------------------------------------------------#
 #---------Final Stuff--------------------------
 #-------------------------------------------------------------------------------#
@@ -173,9 +175,47 @@ COPY odbc.ini /etc/odbc.ini
 EXPOSE 8787/tcp
 EXPOSE 5559/tcp
 
-# Copy config and startup
-COPY startup.sh /usr/local/bin/startup.sh
-RUN chmod +x /usr/local/bin/startup.sh
+##------------------------------------------------------------------------------#
+#---------  s6   --------------------------
+#-------------------------------------------------------------------------------#
 
-ENTRYPOINT ["tini", "--"]
-CMD ["/usr/local/bin/startup.sh"]
+ADD https://github.com/just-containers/s6-overlay/releases/download/v2.2.0.3/s6-overlay-amd64.tar.gz /tmp/
+RUN tar xzf /tmp/s6-overlay-amd64.tar.gz -C /
+
+COPY s6dirs/cont-init.d /etc/cont-init.d
+# Setup service files to automatically run mongodb in the background
+# and log using s6-overlay's logutil-service
+RUN \
+    mkdir -p /data/db \
+    && mkdir -p /etc/cont-init.d \
+    && echo "#!/bin/sh" > /etc/cont-init.d/rserver-log \
+    && echo "mkdir -p /var/log/rserver" >> /etc/cont-init.d/rserver-log \
+    && echo "chown -R nobody:nogroup /var/log/rserver" >> /etc/cont-init.d/rserver-log \
+    && chmod +x /etc/cont-init.d/rserver-log \
+    && mkdir /etc/services.d/rserver \
+        && echo "#! /usr/bin/with-contenv /bin/sh\n/usr/lib/rstudio-server/bin/rserver --server-daemonize 0 >/dev/null 2>/dev/null" >> /etc/services.d/rserver/run \
+        && chmod a+x /etc/services.d/rserver/run \
+        && mkdir /etc/services.d/rserver/log \
+        && echo "#!/usr/bin/execlineb -P\nlogutil-service /var/log/rserver" >> /etc/services.d/rserver/log/run \
+        && chmod a+x /etc/services.d/rserver/log/run \
+    && echo "#!/bin/sh" > /etc/cont-init.d/rstudio-launcher-log \
+    && echo "mkdir -p /var/log/rstudio-launcher" >> /etc/cont-init.d/rstudio-launcher-log \
+    && echo "chown -R nobody:nogroup /var/log/rstudio-launcher" >> /etc/cont-init.d/rstudio-launcher-log \
+    && chmod +x /etc/cont-init.d/rstudio-launcher-log \
+    && mkdir /etc/services.d/rstudio-launcher \
+        && echo "#! /usr/bin/with-contenv /bin/sh\n/usr/lib/rstudio-server/bin/rstudio-launcher wait-for-it.sh localhost:5559 >/dev/null 2>/dev/null" >> /etc/services.d/rstudio-launcher/run \
+        && chmod a+x /etc/services.d/rstudio-launcher/run \
+        && mkdir /etc/services.d/rstudio-launcher/log \
+        && echo "#!/usr/bin/execlineb -P\nlogutil-service /var/log/rstudio-launcher" >> /etc/services.d/rstudio-launcher/log/run \
+        && chmod a+x /etc/services.d/rstudio-launcher/log/run \
+    && echo "#!/bin/sh" > /etc/cont-init.d/sssd-log \
+    && echo "mkdir -p /var/log/sssd" >> /etc/cont-init.d/sssd-log \
+    && echo "chown -R nobody:nogroup /var/log/sssd" >> /etc/cont-init.d/sssd-log \
+    && chmod +x /etc/cont-init.d/sssd-log \
+    && mkdir /etc/services.d/sssd \
+        && echo "#! /usr/bin/with-contenv /bin/sh\nsssd -D -f >/dev/null 2>/dev/null" >> /etc/services.d/sssd/run \
+        && chmod a+x /etc/services.d/sssd/run \
+        && mkdir /etc/services.d/sssd/log \
+        && echo "#!/usr/bin/execlineb -P\nlogutil-service /var/log/sssd" >> /etc/services.d/sssd/log/run \
+        && chmod a+x /etc/services.d/sssd/log/run
+ENTRYPOINT ["/init"]

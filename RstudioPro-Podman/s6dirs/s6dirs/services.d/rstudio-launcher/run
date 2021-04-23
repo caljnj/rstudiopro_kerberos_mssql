@@ -1,0 +1,9 @@
+#!/usr/bin/with-contenv bash
+# --- /etc/services.d/sssd ---
+# -P flag is not used, although i'm not sure about this...
+# most env variables we are are specifically for this application anyway..
+# Start Launcher
+if [ "$RSP_LAUNCHER" == "true" ]; then
+  exec /usr/lib/rstudio-server/bin/rstudio-launcher
+  wait-for-it.sh localhost:5559 -t $RSP_LAUNCHER_TIMEOUT
+fi

@@ -1,0 +1,5 @@
+#!/usr/bin/execlineb
+# --- /etc/services.d/sssd ---
+# -P flag is not used, although i'm not sure about this...
+# most env variables we are are specifically for this application anyway..
+exec /usr/lib/rstudio-server/bin/rserver --server-daemonize 0 2>&1
