@@ -2,8 +2,8 @@
 
 
 sudo podman build --no-cache \
-  --tag=test:rstudiopro_mappeddrives_test \
-  --log-level=debug \
+  --tag=test:rstudiopro_s6 \
+  --log-level=info\
   .
 
 sudo podman image prune -f
